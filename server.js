@@ -4,7 +4,24 @@ const fs = require('fs'); // Para leer y escribir archivos (como pedidos.json)
 
 const app = express(); // Creamos la app con Express
 const PORT = 3000; // Puerto donde correrá el servidor
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path')
 
+const db = new sqlite3.Database('pedidos.db', (err) => {
+  if (err) {
+    return console.error('❌ Error al conectar con SQLite:', err.message);
+  }
+  console.log('✅ Conectado a la base de datos micaela.db');
+});
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS pedidos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    producto TEXT,
+    mensaje TEXT
+  )
+`);
 // Middleware para permitir que los archivos HTML y CSS estén disponibles al navegador
 app.use(express.static('public'));
 
@@ -19,30 +36,23 @@ app.get('/api/prueba', (req, res) => {
 
 // Ruta POST para recibir pedidos desde un formulario
 app.post('/api/pedido', (req, res) => {
-  const nuevoPedido = req.body; // Los datos enviados desde el formulario
+  const { nombre, producto, mensaje } = req.body;
 
-  // Leemos el archivo de pedidos actual (si existe)
-  fs.readFile('pedidos.json', 'utf8', (err, data) => {
-    let pedidos = [];
+  const sql = `INSERT INTO pedidos (nombre, producto, mensaje) VALUES (?, ?, ?)`;
+  const values = [nombre, producto, mensaje];
 
-    if (!err && data) {
-      pedidos = JSON.parse(data); // Si hay pedidos previos, los cargamos
+  db.run(sql, values, function (err) {
+    if (err) {
+      console.error('❌ Error al guardar el pedido:', err.message);
+      return res.status(500).send('Error al guardar el pedido.');
     }
 
-    pedidos.push(nuevoPedido); // Agregamos el nuevo pedido
-
-    // Guardamos todo en el archivo pedidos.json
-    fs.writeFile('pedidos.json', JSON.stringify(pedidos, null, 2), (err) => {
-      if (err) {
-        res.status(500).send('Error al guardar el pedido');
-      } else {
-        res.send('Pedido recibido con éxito 😊');
-      }
-    });
+    console.log('📦 Pedido guardado con ID:', this.lastID);
+    res.send('<h2>¡Pedido recibido y guardado en SQLite! 🧁</h2><a href="/pedido.html">Volver</a>');
   });
 });
 
-// Iniciamos el servidor
+// Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
