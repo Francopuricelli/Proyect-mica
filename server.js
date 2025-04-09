@@ -11,7 +11,7 @@ const db = new sqlite3.Database('pedidos.db', (err) => {
   if (err) {
     return console.error('❌ Error al conectar con SQLite:', err.message);
   }
-  console.log('✅ Conectado a la base de datos micaela.db');
+  console.log('✅ Conectado a la base de datos pedidos.db');
 });
 
 db.run(`
@@ -19,8 +19,9 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT,
     producto TEXT,
+    fecha TEXT,
     mensaje TEXT
-  )
+    )
 `);
 // Middleware para permitir que los archivos HTML y CSS estén disponibles al navegador
 app.use(express.static('public'));
@@ -36,10 +37,10 @@ app.get('/api/prueba', (req, res) => {
 
 // Ruta POST para recibir pedidos desde un formulario
 app.post('/api/pedido', (req, res) => {
-  const { nombre, producto, mensaje } = req.body;
+  const { nombre, producto, fecha, mensaje } = req.body;
 
-  const sql = `INSERT INTO pedidos (nombre, producto, mensaje) VALUES (?, ?, ?)`;
-  const values = [nombre, producto, mensaje];
+  const sql = `INSERT INTO pedidos (nombre, producto, fecha, mensaje) VALUES (?, ?, ?, ?)`;
+  const values = [nombre, producto, fecha, mensaje];
 
   db.run(sql, values, function (err) {
     if (err) {
